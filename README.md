@@ -1,4 +1,4 @@
-# GraduationProject
+# graduation-project
 ## STM32-Based Smart Domestic Terminal System
 
 There are 3 subsystems in this project. 
