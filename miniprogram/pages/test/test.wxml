@@ -1,0 +1,15 @@
+<!--pages/test.wxml-->
+<view class="container">
+  <view class="user-motto">
+    <text class="user-motto">{{datetime}}</text>
+  </view>
+  <view class="window" bindtap="windowTap">
+    <view wx:if="{{active}}">
+      <image class="img" mode="center" src="{{imgSrc}}"></image>
+    </view>
+    <view class="box" wx:else>
+      <icon type="info" size="80"></icon>
+      <text>Tap to start streaming</text>
+    </view>
+  </view>
+</view>
