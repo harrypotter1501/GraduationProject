@@ -11,8 +11,8 @@ def create_app(test_config=None):
         SECRET_KEY = 'dev',
         ROOT_FOLDER = os.path.dirname(os.path.abspath('__file__')),
         DATABASE = os.path.join(app.instance_path, 'flaskr.sqlite'),
-        APP_ID = 'wxc81559edfce187c9',
-        APP_SECRET = '65261bd974da4ce92c0dd24dd29c575f',
+        APP_ID = '####',
+        APP_SECRET = '####',
     )
 
     if test_config is None:
