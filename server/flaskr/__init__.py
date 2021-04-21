@@ -11,17 +11,12 @@ def create_app(test_config=None):
         SECRET_KEY = 'dev',
         ROOT_FOLDER = os.path.dirname(os.path.abspath('__file__')),
         DATABASE = os.path.join(app.instance_path, 'flaskr.sqlite'),
-<<<<<<< HEAD
 
         SOCKET_PORT = 6000,
 
         # this is a dangerous practice
         APP_ID = '###',
         APP_SECRET = '###',
-=======
-        APP_ID = '####',
-        APP_SECRET = '####',
->>>>>>> e087f2131e1495b06f44cdc7f7e7bb92578517a0
     )
 
     if test_config is None:
