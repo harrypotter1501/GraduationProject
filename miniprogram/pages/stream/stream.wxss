@@ -11,17 +11,18 @@
 }
 
 .window {
-  margin-top: 50px;
-}
-
-.box {
   display: flex;
   flex-direction: column;
-  vertical-align: middle;
+  margin-top: 50px;
+  margin-bottom: 50px;
   align-items: center;
 }
 
 .img {
   width: 320;
   height: 240;
+}
+
+.button {
+  margin-top: 50px;
 }

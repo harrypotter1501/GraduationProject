@@ -21,7 +21,7 @@ Page({
         if (res.data === 'OK') {
           app.globalData.register = false
           app.login()
-          wx.navigateTo({
+          wx.redirectTo({
             url: '../index/index',
           })
         }

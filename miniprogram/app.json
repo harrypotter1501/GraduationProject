@@ -2,7 +2,7 @@
   "pages": [
     "pages/index/index",
     "pages/logs/logs",
-    "pages/test/test",
+    "pages/stream/stream",
     "pages/register/register"
   ],
   "window": {

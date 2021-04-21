@@ -34,9 +34,9 @@
     "minifyWXSS": true
   },
   "compileType": "miniprogram",
-  "libVersion": "2.14.3",
+  "libVersion": "2.16.1",
   "appid": "wxc81559edfce187c9",
-  "projectname": "test",
+  "projectname": "Monitor",
   "debugOptions": {
     "hidedInDevtools": []
   },
