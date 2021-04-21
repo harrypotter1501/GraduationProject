@@ -1,4 +1,0 @@
-# cv
-
-import cv2
-

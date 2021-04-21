@@ -2,33 +2,46 @@
 
 import socket
 import threading
+import struct
 
 from queue import Queue
-from PIL import Image
-from io import BytesIO
+from functools import namedtuple
 
+from io import BytesIO
+from PIL import Image
+import json
+
+
+Sensors = namedtuple('Sensors', ['temperature', 'humidity'])
+SocketBuffer = namedtuple('SocketBuffer', ['sensors', 'images'])
 
 # socket thread class
 class SocketThread(threading.Thread):
     ''' websocket thread '''
 
     def __init__(self, *args, **kwargs):
-        self.buffer = Queue(5)
-        self.last_item = None
+        self.buffer = SocketBuffer(
+            json.dumps(Sensors('0', '0%')),
+            Queue(5)
+        )
         self.running = True
         return super().__init__(*args, **kwargs)
 
 
     def push_img(self, item):
-        if self.buffer.full():
-            self.buffer.get()
-        self.buffer.put(item)
+        try:
+            self.buffer.images.put_nowait(item)
+        except:
+            pass
 
 
     def pop_img(self):
-        if not self.buffer.empty():
-            self.last_item = self.buffer.get()
-        return self.last_item
+        return self.buffer.images.get()
+
+
+    def close(self):
+        self.running = False
+        self.join()
 
 
 # socket server class
@@ -45,13 +58,15 @@ class SocketServer:
 
         self.s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self.s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-        #ip = socket.gethostbyname(socket.gethostname())
+        val = struct.pack('Q', 1000)
+        self.s.setsockopt(socket.SOL_SOCKET, socket.SO_RCVTIMEO, val)
+
         self.s.bind(('127.0.0.1', 6000))#(('192.168.0.100', 8088))#
         self.s.listen(5)
 
         self.threads = {}
         self.address = {}
-        self.bufsize = 10*1024
+        self.bufsize = 100*1024
 
 
     # singleton
@@ -68,10 +83,9 @@ class SocketServer:
     def verify_ip(self, ip):
         if ip == '127.0.0.1':
             return True
-        for key in self.threads.keys():
-            if ip == key.device_ip:
-                return True
-        return False
+        return ip in [
+            key.device_ip for key in self.threads.keys()
+        ]
 
 
     # handler
@@ -90,22 +104,22 @@ class SocketServer:
         print('Accepted socket from {}'.format(ip))
 
         t = self.threads[ip]
+
         while t.running:
             try:
                 data = conn.recv(self.bufsize)
             except Exception as e:
-                print(e)
-                break
+                continue
+            #data = conn.recv(self.bufsize)
 
             if not data:
                 break
-
-            stream = BytesIO(data)
-            img = Image.open(stream)
-            t.push_img(img)
-
-            info = 'Socket recieved {} bits'.format(len(data))
-            print(info)
+            elif len(data) > 1000:
+                img = Image.open(BytesIO(data))
+                t.push_img(img)
+                print('Qsize: {}'.format(t.buffer.images.qsize()))
+            else:
+                print('Recieved from {}: {}'.format(ip, data.decode()))
 
         conn.close()
         print('Socket {} closed'.format(ip))
@@ -113,24 +127,32 @@ class SocketServer:
 
 
     # create new socket
-    def create_socket(self, ip):
+    def create_socket(self, id, ip):
         ''' a method that creates a new websocket '''
 
         if ip in self.threads.keys():
-            t = self.threads[ip]
-            t.running = False
-            t.join()
-            self.threads.pop(ip)
+            self.close_socket(ip)
 
-        t = SocketThread(
-            target=self.socket_handler
-        )
+        t = SocketThread(target=self.socket_handler)
         self.threads[ip] = t
+        self.address[id] = ip
+
         t.start()
         return 'OK'
 
 
-# init server
+    # close a socket
+    def close_socket(self, ip):
+        ''' close a websocket '''
+
+        try:
+            self.threads[ip].close()
+            return 'OK'
+        except KeyError:
+            return None
+
+
+# interfaces
 def init_server():
     ''' initialize the server '''
 
@@ -140,22 +162,25 @@ def init_server():
 def create_socket(device_id, device_ip):
     ''' create a websocket that awaits connnection from specific ip '''
 
-    SocketServer.instance().address[device_id] = device_ip
-    return SocketServer.instance().create_socket(device_ip)
+    return SocketServer.instance().create_socket(device_id, device_ip)
 
 
-def close_socket(device_id):
-    ''' close a websocket '''
-
-    pass
-
-
-def get_socket_buffer(device_id):
-    ''' get socket buffer according to device_id '''
+def get_thread(device_id):
+    ''' get socket thread according to device_id '''
 
     try:
         ip = SocketServer.instance().address[device_id]
         t = SocketServer.instance().threads[ip]
     except KeyError:
-        return {'errmsg': 'Login required'}
+        return None
     return t
+
+
+def pop_img(device_id):
+    ''' fetch a jpeg frame according to device_id '''
+
+    t = get_thread(device_id)
+    if t is not None:
+        return t.pop_img()
+    else:
+        return None

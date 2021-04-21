@@ -4,7 +4,7 @@ from flask import (
     Blueprint, g, request, session
 )
 from .db import get_db
-from .socket_server import create_socket, get_socket_buffer
+from .socket_server import create_socket
 
 
 # blueprint
@@ -56,6 +56,13 @@ def device():
     return 'OK'
 
 
-@bp.route('/logout')
-def logout():
-    pass
+# @bp.route('/logout')
+# def logout():
+#     ''' close socket '''
+
+#     device_ip = request.remote_addr
+#     res = close_socket(device_ip)
+
+#     if not res:
+#         return 'No alive socket'
+#     return res

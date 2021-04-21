@@ -65,8 +65,6 @@ def login():
     if row is None:
         return 'REG'
 
-    session['devices'] = row['devices']
-
     return 'OK'
 
 
@@ -112,7 +110,10 @@ def register():
 def logout():
     ''' user logout '''
 
-    session.clear()
+    try:
+        session.clear()
+    except:
+        return 'Not logged in'
     return 'OK'
 
 
@@ -129,11 +130,8 @@ def load_logged_in_user():
         g.user = None
     else:
         g.user = get_db().execute(
-            'SELECT devices FROM Users WHERE openid = ?', (openid,)
+            'SELECT * FROM Users WHERE openid = ?', (openid,)
         ).fetchone()
-
-        from .socket_server import get_socket_buffer
-        g.socket = get_socket_buffer(g.user['devices'])
 
 
 def login_required(view):

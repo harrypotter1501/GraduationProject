@@ -1,0 +1,28 @@
+/home/user/Projects/flask-tutorial
+©À©¤©¤ flaskr/
+©¦   ©À©¤©¤ __init__.py
+©¦   ©À©¤©¤ db.py
+©¦   ©À©¤©¤ schema.sql
+©¦   ©À©¤©¤ auth.py
+©¦   ©À©¤©¤ blog.py
+©¦   ©À©¤©¤ templates/
+©¦   ©¦   ©À©¤©¤ base.html
+©¦   ©¦   ©À©¤©¤ auth/
+©¦   ©¦   ©¦   ©À©¤©¤ login.html
+©¦   ©¦   ©¦   ©¸©¤©¤ register.html
+©¦   ©¦   ©¸©¤©¤ blog/
+©¦   ©¦       ©À©¤©¤ create.html
+©¦   ©¦       ©À©¤©¤ index.html
+©¦   ©¦       ©¸©¤©¤ update.html
+©¦   ©¸©¤©¤ static/
+©¦       ©¸©¤©¤ style.css
+©À©¤©¤ tests/
+©¦   ©À©¤©¤ conftest.py
+©¦   ©À©¤©¤ data.sql
+©¦   ©À©¤©¤ test_factory.py
+©¦   ©À©¤©¤ test_db.py
+©¦   ©À©¤©¤ test_auth.py
+©¦   ©¸©¤©¤ test_blog.py
+©À©¤©¤ venv/
+©À©¤©¤ setup.py
+©¸©¤©¤ MANIFEST.in

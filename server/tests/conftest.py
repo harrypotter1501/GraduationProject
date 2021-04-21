@@ -9,6 +9,7 @@ from flaskr import create_app
 from flaskr.db import get_db, init_db
 
 import socket
+import time
 
 
 @pytest.fixture
@@ -47,13 +48,19 @@ class AuthActions(object):
     def __init__(self, client):
         self._client = client
 
+
     def login(self, code='test'):
         return self._client.get(
-            'http://127.0.0.1:5000/login/?code={}'.format(code)
+            '/login/?code={}'.format(code)
         )
 
+
     def logout(self):
-        return self._client.get('/auth/logout/')
+        return self._client.get('/login/logout')
+
+
+    def get_img(self):
+        return self._client.get('/stream/')
 
 
 @pytest.fixture
@@ -69,23 +76,29 @@ class DeviceActions(object):
         self._client = client
         self._socket = socket.socket()
 
-    def send_text(self):
-        self._socket.send(b'some text')
 
     def login(self, device_id='test', device_key='123456'):
         rv = self._client.get(
-            'http://127.0.0.1:5000/device/?device_id={}&device_key={}'.format(device_id, device_key)
+            '/device/?device_id={}&device_key={}'.format(device_id, device_key)
         )
+        assert rv.data == b'OK'
 
+        self._socket = socket.socket()
         self._socket.connect(('127.0.0.1', 6000))
 
-        data = self._socket.recv(1024).decode()
-        assert 'established' in data
+        data = self._socket.recv(1024)
+        assert b'established' in data
 
         return rv
 
-    def logout(self, client):
-        pass
+
+    def logout(self):
+        self._socket.close()
+
+
+    def upload(self, img):
+        self._socket.send(img)
+        time.sleep(1)
 
 
 @pytest.fixture

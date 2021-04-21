@@ -1,35 +1,36 @@
-# test device
+# test user
 
 import pytest
 from flask import g, session
 from flaskr.db import get_db
 
 
-def test_login(client, auth):
+def test_login_logout(client, auth):
     assert client.get('/login/').status_code == 200
     auth.login()
 
     with client:
-        client.get('/stream/')
+        client.get('/stream/test/')
         assert session['openid'] == 'test'
         assert g.user is not None
-        assert g.socket is not None
+
+    assert client.get('/login/logout').status_code == 200
+    with client:
+        rv = auth.logout()
+        assert rv.data == b'OK'
+        assert 'openid' not in session
 
 
 def test_register(client, auth, app):
-    assert auth.login('test1')
-    # with client:
-    #     assert client.post(
-    #         '/login/register',
-    #         data={'device_id': 'test', 'device_key': '123456'}
-    #     ).data.decode() == 'OK'
+    assert auth.login('test1').data == b'REG'
 
-    #     with app.app_context():
-    #         assert get_db().execute(
-    #             "SELECT * FROM Users WHERE openid = 'test'"
-    #         ).fetchone() is not None
+    res =  client.post(
+        '/login/register',
+        data={'device_id': 'test', 'device_key': '123456'}
+    )
+    assert res.data == b'OK'
 
-
-def test_socket(client, dev):
-    assert client.get('/device/').status_code == 200
-    assert dev.login().status_code == 200
+    with app.app_context():
+        assert get_db().execute(
+            "SELECT * FROM Users WHERE openid = 'test'"
+        ).fetchone() is not None

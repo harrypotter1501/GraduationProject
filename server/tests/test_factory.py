@@ -10,4 +10,4 @@ def test_config():
 
 def test_hello(client):
     response = client.get('/test')
-    assert response.data == b'TEST'
+    assert b'test' in response.data
