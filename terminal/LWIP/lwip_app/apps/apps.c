@@ -34,7 +34,7 @@ void socket_recv_task(void *args)
 			printf("Socket Recieved %d bits!\r\n", ret);
 			//OSSemPost(sem_recv);
 		}
-		delay_ms(100);
+		delay_ms(1000);
 	}
 }
 
@@ -43,6 +43,9 @@ void socket_recv_task(void *args)
 extern u32* jpeg_buf;
 extern u32 jpeg_data_len;
 extern u8 jpeg_data_rdy;
+
+extern char* dht_data_buf;
+extern u8 dht_data_rdy;
 
 
 #define SEND_TASK_PRIO 11
@@ -53,16 +56,27 @@ void socket_send_task(void *args)
 {
 	LWIP_UNUSED_ARG(args);
 	
+	int ret;
+	
 	while(1)
 	{
 		if(jpeg_data_rdy == 3)
 		{
 			u8* p = (u8*)jpeg_buf;
-			int ret = write(sock, p, jpeg_data_len * 4);
-			if(ret > 0)
-				printf("Socket Sent %d bits!\r\n", ret);
+			ret = write(sock, p, jpeg_data_len * 4);
+			if(ret == 0)
+				printf("Socket Error: No data sent\r\n");
 			jpeg_data_rdy = 2;
 		}
+		
+		if(dht_data_rdy == 1)
+		{
+			ret = write(sock, dht_data_buf, strlen(dht_data_buf));
+			if(ret == 0)
+				printf("Socket Error: No data sent\r\n");
+			dht_data_rdy = 0;
+		}
+		
 		delay_ms(10);
 	}
 }
@@ -184,7 +198,7 @@ void http_get_task(void* args)
 		else
 		{
 			OSSemPost(sem_http_rdy);
-			tcp_conn->recv_timeout = 10;
+			tcp_conn->recv_timeout = 100;
 			
 			while(1)
 			{
@@ -220,7 +234,7 @@ void http_get_task(void* args)
 							printf("Recieve Failed with Code: %d\r\n", err);
 							break;
 						}
-						delay_ms(10);
+						delay_ms(100);
 					}
 					
 					if(timeout <= 0)
@@ -287,7 +301,7 @@ void app_main_task(void* args)
 //		delay_ms(1000);
 //		break;
 //	}
-	delay_ms(5000);
+	delay_ms(3000);
 	
 	socket_connect();
 	

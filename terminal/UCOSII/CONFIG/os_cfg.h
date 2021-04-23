@@ -43,7 +43,7 @@
 #define OS_MAX_FLAGS              5u   /*系统最大的信号量集数Max. number of Event Flag Groups    in your application      */
 #define OS_MAX_MEM_PART          5u   /*内存块数目 Max. number of memory partitions                             */
 #define OS_MAX_QS                5u   /* Max. number of queue control blocks in your application      */
-#define OS_MAX_TASKS             10u   /* Max. number of tasks in your application, MUST be >= 2       */
+#define OS_MAX_TASKS             15u   /* Max. number of tasks in your application, MUST be >= 2       */
 
 #define OS_SCHED_LOCK_EN          1u   /* Include code for OSSchedLock() and OSSchedUnlock()           */
 
@@ -134,7 +134,7 @@
 
 
                                        /* --------------------- TIMER MANAGEMENT --------------------- */
-#define OS_TMR_EN                 0u   /* 使能软件定时器 Enable (1) or Disable (0) code generation for TIMERS         */
+#define OS_TMR_EN                 1u   /* 使能软件定时器 Enable (1) or Disable (0) code generation for TIMERS         */
 #define OS_TMR_CFG_MAX           16u   /* 最大定时器数目 Maximum number of timers                                 */
 #define OS_TMR_CFG_NAME_EN        1u   /* 确定定时器名字 Determine timer names                                    */
 #define OS_TMR_CFG_WHEEL_SIZE     8u   /* 定时器轮数为8  Size of timer wheel (#Spokes)                            */
