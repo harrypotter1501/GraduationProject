@@ -13,7 +13,7 @@
 #define NO_SYS                  0  		//使用UCOS操作系统
 #define MEM_ALIGNMENT           4  		//使用4字节对齐模式
 #define MEM_SIZE                20000 	//内存堆heap大小
-#define MEMP_NUM_PBUF           30 		//MEMP_NUM_PBUF:memp结构的pbuf数量,如果应用从ROM或者静态存储区发送大量数据时,这个值应该设置大一点
+#define MEMP_NUM_PBUF           50 		//MEMP_NUM_PBUF:memp结构的pbuf数量,如果应用从ROM或者静态存储区发送大量数据时,这个值应该设置大一点
 #define MEMP_NUM_UDP_PCB        6		//MEMP_NUM_UDP_PCB:UDP协议控制块(PCB)数量.每个活动的UDP"连接"需要一个PCB.
 #define MEMP_NUM_TCP_PCB        10		//MEMP_NUM_TCP_PCB:同时建立激活的TCP数量
 #define MEMP_NUM_TCP_PCB_LISTEN 6		//MEMP_NUM_TCP_PCB_LISTEN:能够监听的TCP连接数量
@@ -21,7 +21,7 @@
 #define MEMP_NUM_SYS_TIMEOUT    8		//MEMP_NUM_SYS_TIMEOUT:能够同时激活的timeout个数
 
 //pbuf选项
-#define PBUF_POOL_SIZE          30		//PBUF_POOL_SIZE:pbuf内存池个数
+#define PBUF_POOL_SIZE          60		//PBUF_POOL_SIZE:pbuf内存池个数
 #define PBUF_POOL_BUFSIZE       512		//PBUF_POOL_BUFSIZE:每个pbuf内存池大小
 
 #define LWIP_TCP                1  		//使用TCP
@@ -90,7 +90,7 @@
 #define LWIP_SO_RCVTIMEO                1 	//通过定义LWIP_SO_RCVTIMEO使能netconn结构体中recv_timeout,使用recv_timeout可以避免阻塞线程
 
 //有关系统的选项
-#define TCPIP_THREAD_STACKSIZE          1000	//内核任务堆栈大小
+#define TCPIP_THREAD_STACKSIZE          2000	//内核任务堆栈大小
 #define DEFAULT_UDP_RECVMBOX_SIZE       2000
 #define DEFAULT_THREAD_STACKSIZE        512
 

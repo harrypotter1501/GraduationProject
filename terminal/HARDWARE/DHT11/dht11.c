@@ -107,10 +107,10 @@ u8 DHT11_Init(void)
 {
 	GPIO_InitTypeDef  GPIO_InitStructure;
 
-  RCC_AHB1PeriphClockCmd(RCC_AHB1Periph_GPIOG, ENABLE);//使能GPIOG时钟
+  RCC_AHB1PeriphClockCmd(RCC_AHB1Periph_GPIOF, ENABLE);//使能GPIOG时钟
 
   //GPIOF9,F10初始化设置
-  GPIO_InitStructure.GPIO_Pin = GPIO_Pin_8 ;
+  GPIO_InitStructure.GPIO_Pin = GPIO_Pin_11 ;
   GPIO_InitStructure.GPIO_Mode = GPIO_Mode_OUT;//GPIO_Mode_AF;//普通输出模式
   GPIO_InitStructure.GPIO_OType = GPIO_OType_PP;//推挽输出
   GPIO_InitStructure.GPIO_Speed = GPIO_Speed_50MHz;//50MHz

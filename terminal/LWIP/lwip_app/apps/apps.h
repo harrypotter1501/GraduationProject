@@ -27,7 +27,7 @@ typedef struct http_get_resp
 #define DEVICE_ID "test"
 #define DEVICE_KEY "123456"
 
-#define SERVER_IP "192.168.0.100"
+#define SERVER_IP "192.168.0.103"
 #define SERVER_PORT_TCP 8088
 #define SERVER_PORT_SO 8088
 

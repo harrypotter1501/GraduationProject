@@ -9,6 +9,9 @@ u32* jpeg_buf;
 volatile u32 jpeg_data_len = 0;
 volatile u8 jpeg_data_rdy = 0;
 
+u32* send_buf;
+u32 send_buf_idx = 0;
+
 u8 cam_on = 0;
 u8 dht_on = 0;
 u8 frame = 1;
@@ -48,7 +51,9 @@ OS_STK CAM_TASK_STK[CAM_STK_SIZE];
 void camera_task(void *pdata)
 {
 	jpeg_buf = mymalloc(SRAMIN, jpeg_buf_size * 4);
-	if(jpeg_buf == 0x00)
+	send_buf = mymalloc(SRAMEX, jpeg_buf_size * 4 * SEND_NUM);
+	
+	if(jpeg_buf == 0x00 || send_buf == 0x00)
 	{
 		printf("Malloc Failed!\r\n");
 		while(1);
@@ -65,12 +70,40 @@ void camera_task(void *pdata)
 		delay_ms(100);
 	
 	u16 tval = 1000;
+	
 	while(1)
 	{
 		if(cam_on && jpeg_data_rdy == 1)
 		{
 			//cam_on = 0;
-			jpeg_data_rdy = 3;
+			//mymemcpy(send_buf + send_buf_idx, jpeg_buf, jpeg_data_len);
+			//printf("Camera Captured %d bytes\r\n", jpeg_data_len * 4);
+			u8* p = (u8*)jpeg_buf;
+			send_buf_idx += jpeg_data_len;
+			
+#ifdef JPEG_BATCH
+			
+			static u8 send_buf_cnt = 0;
+			send_buf_cnt++;
+			
+			if(send_buf_cnt == SEND_NUM)
+				send_buf_cnt = 0;
+			else
+			{
+				jpeg_data_rdy = 2;
+				continue;
+			}
+			
+			p = (u8*)send_buf;
+			
+#endif /* JPEG_BATCH */
+			
+			int ret = write(sock, p, send_buf_idx * 4);
+			if(ret <= 0)
+				printf("Socket Error: No data sent\r\n");
+			
+			send_buf_idx = 0;
+			jpeg_data_rdy = 2;
 		}
 		tval = (u16)1000/frame;
 		delay_ms(tval);
@@ -100,15 +133,18 @@ void dht11_task(void *pdata)
 			{
 				cnt++;
 				if(cnt > 10)
+				{
+					printf("DHT11 Read Failed\r\n");
 					break;
+				}
 				delay_ms(500);
 			}
-			printf("DHT11 Read Failed\r\n");
 			
 			sprintf(dht_data_buf, "%d %d\r\n", temperature, humidity);
-			dht_data_rdy = 1;
+			int ret = write(sock, dht_data_buf, strlen(dht_data_buf));
+			if(ret <= 0)
+				printf("Socket Error: No data sent\r\n");
 		}
-		
 		delay_ms(1000);
 	}
 }

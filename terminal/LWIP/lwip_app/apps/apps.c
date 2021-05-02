@@ -17,6 +17,10 @@ OS_EVENT* sem_resp;
 
 
 //recieve task
+extern u8 cam_on;
+extern u8 dht_on;
+extern u8 frame;
+
 #define RECV_TASK_PRIO 10
 #define RECV_STK_SIZE 128
 OS_STK RECV_TASK_STK[RECV_STK_SIZE];
@@ -31,55 +35,79 @@ void socket_recv_task(void *args)
 		int ret = read(sock, NET_RX_BUF, RX_BUFSIZE);
 		if(ret > 0)
 		{
-			printf("Socket Recieved %d bits!\r\n", ret);
-			//OSSemPost(sem_recv);
+			printf("Socket Recieved %d bytes:\r\n%s\r\n", ret, NET_RX_BUF);
+			u8 cmd = NET_RX_BUF[0];
+			dht_on = cmd & 0x01;
+			cam_on = (cmd & 0x02) >> 1;
+			if(cam_on)
+				cam_on = ((cmd & 0x0C) >> 2) + 1;
+			
+			u8 frame_n = (cmd & 0x30) >> 4;
+			switch(frame_n)
+			{
+				case 0:
+				{
+					frame = 1;
+					break;
+				}
+				case 1:
+				{
+					frame = 3;
+					break;
+				}
+				case 2:
+				{
+					frame = 6;
+					break;
+				}
+				default:
+					frame = 1;
+			}
 		}
 		delay_ms(1000);
 	}
 }
 
 
-//send task
-extern u32* jpeg_buf;
-extern u32 jpeg_data_len;
-extern u8 jpeg_data_rdy;
+////send task
+//extern u32* send_buf;
+//extern u32 send_buf_idx;
+//extern u8 jpeg_data_rdy;
 
-extern char* dht_data_buf;
-extern u8 dht_data_rdy;
+//extern char* dht_data_buf;
+//extern u8 dht_data_rdy;
 
 
-#define SEND_TASK_PRIO 11
-#define SEND_STK_SIZE 128
-OS_STK SEND_TASK_STK[SEND_STK_SIZE];
+//#define SEND_TASK_PRIO 11
+//#define SEND_STK_SIZE 128
+//OS_STK SEND_TASK_STK[SEND_STK_SIZE];
 
-void socket_send_task(void *args)
-{
-	LWIP_UNUSED_ARG(args);
-	
-	int ret;
-	
-	while(1)
-	{
-		if(jpeg_data_rdy == 3)
-		{
-			u8* p = (u8*)jpeg_buf;
-			ret = write(sock, p, jpeg_data_len * 4);
-			if(ret == 0)
-				printf("Socket Error: No data sent\r\n");
-			jpeg_data_rdy = 2;
-		}
-		
-		if(dht_data_rdy == 1)
-		{
-			ret = write(sock, dht_data_buf, strlen(dht_data_buf));
-			if(ret == 0)
-				printf("Socket Error: No data sent\r\n");
-			dht_data_rdy = 0;
-		}
-		
-		delay_ms(10);
-	}
-}
+//void socket_send_task(void *args)
+//{
+//	LWIP_UNUSED_ARG(args);
+//	
+//	int ret;
+//	
+//	while(1)
+//	{
+////		if(jpeg_data_rdy == 3)
+////		{
+////			for(u8 i = 0; i < 100; i++)
+////				printf("%d ", send_buf[i]);
+////			//u8* p = (u8*)send_buf;
+////			ret = write(sock, send_buf, send_buf_idx * 4);
+////			printf("\r\n");
+////			if(ret <= 0)
+////				printf("Socket Error: No data sent\r\n");
+////			send_buf_idx = 0;
+////			jpeg_data_rdy = 2;
+////		}
+//		
+//		
+//		
+//		delay_ms(10);
+//	}
+//}
 
 
 //sockets
@@ -326,7 +354,7 @@ INT8U apps_init(void)
 	OS_ENTER_CRITICAL();
 	
 	res |= OSTaskCreate(socket_recv_task, (void*)0, (OS_STK*)&RECV_TASK_STK[RECV_STK_SIZE - 1], RECV_TASK_PRIO);
-	res |= OSTaskCreate(socket_send_task, (void*)0, (OS_STK*)&SEND_TASK_STK[SEND_STK_SIZE - 1], SEND_TASK_PRIO);
+	//res |= OSTaskCreate(socket_send_task, (void*)0, (OS_STK*)&SEND_TASK_STK[SEND_STK_SIZE - 1], SEND_TASK_PRIO);
 	//res |= OSTaskCreate(http_get_task, (void*)0,  (OS_STK*)&GET_TASK_STK[GET_STK_SIZE - 1], GET_TASK_PRIO);
 	res |= OSTaskCreate(app_main_task, (void*)0, (OS_STK*)&MAIN_TASK_STK[MAIN_STK_SIZE - 1], MAIN_TASK_PRIO);
 

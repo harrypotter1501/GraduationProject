@@ -24,7 +24,8 @@
 #include "apps.h"
 
 
-extern u8 cam_on;
+#define SEND_NUM 1
+//#define JPEG_BATCH
 
 
 void start_task(void *pdata);
