@@ -18,7 +18,7 @@ Page({
   },
   bindTextTap() {
     wx.navigateTo({
-      url: '../test/test',
+      url: '../stream/stream',
     })
   },
   onLoad() {
@@ -29,15 +29,19 @@ Page({
     }
   },
   onReady() {
+    // wx.redirectTo({
+    //   url: '../stream/stream',
+    // })
+    // return
     var page = this
     var interval = setInterval(() => {
-      if (page.data.hasUserInfo && app.globalData.login) {
+      if (page.data.hasUserInfo && app.globalData.login) {//(app.globalData.login) {//
         clearInterval(interval)
         page.setData({
           login: app.globalData.login
         })
         setTimeout(() => {
-          wx.redirectTo({
+          wx.navigateTo({
             url: '../stream/stream',
           })
         }, 2000)

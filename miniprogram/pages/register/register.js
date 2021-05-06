@@ -16,7 +16,7 @@ Page({
         device_id: form.device_id,
         device_key: form.device_key
       },
-      success: res => {
+      success: (res) => {
         console.log(res)
         if (res.data === 'OK') {
           app.globalData.register = false
@@ -25,6 +25,12 @@ Page({
             url: '../index/index',
           })
         }
+      },
+      fail: (res) => {
+        console.error(res)
+      },
+      complete: (res) => {
+        app.globalData.requestCompleteCallback(res)
       }
     })
   }
