@@ -1,10 +1,14 @@
 # device
 
+import functools
+
 from flask import (
     Blueprint, g, request, session
 )
+
 from .db import get_db
-from .socket_server import create_socket
+from .login import login_required
+from .socket_server import create_socket, socket_alive
 
 
 # blueprint
@@ -56,13 +60,15 @@ def device():
     return 'OK'
 
 
-# @bp.route('/logout')
-# def logout():
-#     ''' close socket '''
+def device_required(view):
+    ''' wrapper for views which requires a device
+    :should be used with and after login_required
+    '''
 
-#     device_ip = request.remote_addr
-#     res = close_socket(device_ip)
-
-#     if not res:
-#         return 'No alive socket'
-#     return res
+    @functools.wraps(view)
+    def wrapped_view(**kwargs):
+        device_id = g.user['devices']
+        if not socket_alive(device_id):
+            return 'DEVICE'
+        return view(**kwargs)
+    return wrapped_view

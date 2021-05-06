@@ -19,6 +19,8 @@ def app():
     app = create_app({
         'TESTING': True,
         'DATABASE': db_path,
+        'SERVER_IP': '127.0.0.1',
+        'SOCKET_PORT': 6000,
     })
 
     with app.app_context():
@@ -63,6 +65,25 @@ class AuthActions(object):
         return self._client.get('/stream/')
 
 
+    def get_sensors(self):
+        return self._client.get('/stream/sensors')
+
+
+    def command(self, dht, cam, mode="QVGA", frame="MEDIUM"):
+        rv = self._client.post(
+            '/stream/command',
+            data= {
+                "DHT": dht,
+                "CAM":  cam,
+                "MODE": mode,
+                "FRAME": frame
+            }
+        )
+
+        assert rv.status_code == 200
+        return rv
+
+
 @pytest.fixture
 def auth(client):
     return AuthActions(client)
@@ -97,8 +118,24 @@ class DeviceActions(object):
 
 
     def upload(self, img):
-        self._socket.send(img)
+        ret = self._socket.send(img)
+        try:
+            assert ret > 0
+        except Exception as e:
+            self._socket.close()
+            raise e
         time.sleep(1)
+
+
+    def sensors(self, temp=25, humid=50):
+        data = '{} {}\r\n'.format(temp, humid)
+        self._socket.send(bytes(data, encoding='utf8'))
+        time.sleep(1)
+
+
+    def recv(self):
+        data = self._socket.recv(1024)
+        return data
 
 
 @pytest.fixture

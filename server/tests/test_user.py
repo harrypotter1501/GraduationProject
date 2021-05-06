@@ -14,7 +14,6 @@ def test_login_logout(client, auth):
         assert session['openid'] == 'test'
         assert g.user is not None
 
-    assert client.get('/login/logout').status_code == 200
     with client:
         rv = auth.logout()
         assert rv.data == b'OK'

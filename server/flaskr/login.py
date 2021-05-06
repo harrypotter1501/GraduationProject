@@ -6,6 +6,7 @@ from flask import (
 )
 #from werkzeug.security import check_password_hash, generate_password_hash
 from .db import get_db
+from .socket_server import close_socket
 
 
 # blueprint
@@ -41,8 +42,6 @@ def login():
 
     db = get_db()
 
-    appid = current_app.config['APP_ID']
-    app_secret = current_app.config['APP_SECRET']
     code = request.args.get('code')
 
     if code is None:
@@ -50,6 +49,8 @@ def login():
     elif 'test' in code:
         openid = code
     else:
+        appid = current_app.config['APP_ID']
+        app_secret = current_app.config['APP_SECRET']
         openid = get_openid(appid, app_secret, code)['openid']
 
     if openid is None:
@@ -59,7 +60,7 @@ def login():
     session['openid'] = openid
 
     row = db.execute(
-        'SELECT * FROM Users WHERE openid = ?', (openid,)
+        'SELECT id FROM Users WHERE openid = ?', (openid,)
     ).fetchone()
 
     if row is None:
@@ -111,9 +112,11 @@ def logout():
     ''' user logout '''
 
     try:
+        device_id = g.user['devices']
+        close_socket(device_id)
         session.clear()
     except:
-        return 'Not logged in'
+        return ''
     return 'OK'
 
 
@@ -130,7 +133,7 @@ def load_logged_in_user():
         g.user = None
     else:
         g.user = get_db().execute(
-            'SELECT * FROM Users WHERE openid = ?', (openid,)
+            'SELECT id, openid, devices FROM Users WHERE openid=?', (openid,)
         ).fetchone()
 
 

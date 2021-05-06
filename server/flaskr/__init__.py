@@ -11,12 +11,8 @@ def create_app(test_config=None):
         SECRET_KEY = 'dev',
         ROOT_FOLDER = os.path.dirname(os.path.abspath('__file__')),
         DATABASE = os.path.join(app.instance_path, 'flaskr.sqlite'),
-
+        SERVER_IP = '127.0.0.1',
         SOCKET_PORT = 6000,
-
-        # this is a dangerous practice
-        APP_ID = '###',
-        APP_SECRET = '###',
     )
 
     if test_config is None:
@@ -47,11 +43,16 @@ def create_app(test_config=None):
 
     # generate websocket server instance
     from .socket_server import init_server
-    init_server()
+    ip = app.config['SERVER_IP']
+    port = app.config['SOCKET_PORT']
+    init_server(ip, port)
+    print(' * Socket Server Running on {}:{}'.format(ip, port))
 
     # test url
     @app.route('/test')
     def test():
         return 'This is a test url'
+
+    print(' * Server Started on {}:{}'.format(ip, 8080))
 
     return app

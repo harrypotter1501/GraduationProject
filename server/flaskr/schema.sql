@@ -19,4 +19,6 @@ CREATE TABLE Users (
 
 -- initial data
 INSERT INTO Devices (device_id, device_key) VALUES ('test', '123456');
+INSERT INTO Devices (device_id, device_key) VALUES ('test_sys', 'abcdef');
 INSERT INTO Users (openid, devices) VALUES ('test', 'test');
+INSERT INTO Users (openid, devices) VALUES ('test_system', 'test_sys');

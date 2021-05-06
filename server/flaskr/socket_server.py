@@ -1,5 +1,6 @@
 # socket server
 
+import time
 import socket
 import threading
 import struct
@@ -12,8 +13,32 @@ from PIL import Image
 import json
 
 
-Sensors = namedtuple('Sensors', ['temperature', 'humidity'])
+SensorsPop = namedtuple('SensorsPop', ['temperature', 'humidity', 'time'])
 SocketBuffer = namedtuple('SocketBuffer', ['sensors', 'images'])
+
+
+class Sensors:
+    ''' buffer for sensor data '''
+
+    def __init__(self):
+        self.temperature = 0
+        self.humidity = 0
+        self.time = 0
+
+
+    def set(self, temp=0, humid=0):
+        self.temperature = temp
+        self.humidity = humid
+        self.time = time.time()
+
+
+    def get(self):
+        return SensorsPop(
+            self.temperature,
+            self.humidity,
+            self.time
+        )
+
 
 # socket thread class
 class SocketThread(threading.Thread):
@@ -21,10 +46,11 @@ class SocketThread(threading.Thread):
 
     def __init__(self, *args, **kwargs):
         self.buffer = SocketBuffer(
-            json.dumps(Sensors('0', '0%')),
+            Sensors(),
             Queue(5)
         )
         self.running = True
+        self.conn = None
         return super().__init__(*args, **kwargs)
 
 
@@ -39,9 +65,16 @@ class SocketThread(threading.Thread):
         return self.buffer.images.get()
 
 
+    def push_sensors(self, temp=0, humid=0):
+        self.buffer.sensors.set(temp, humid)
+
+
+    def pop_sensors(self):
+        return self.buffer.sensors.get()
+
+
     def close(self):
         self.running = False
-        self.join()
 
 
 # socket server class
@@ -50,7 +83,7 @@ class SocketServer:
     :singleton
     '''
 
-    def __init__(self):
+    def __init__(self, ip='127.0.0.1', port=6000):
         ''' create a SocketServer instance
         :threads - a dict that stores all SocketThreads
         :DO NOT get new instance after initializiation
@@ -58,15 +91,16 @@ class SocketServer:
 
         self.s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self.s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-        val = struct.pack('Q', 1000)
-        self.s.setsockopt(socket.SOL_SOCKET, socket.SO_RCVTIMEO, val)
+        # val = struct.pack('Q', 1000)
+        # self.s.setsockopt(socket.SOL_SOCKET, socket.SO_RCVTIMEO, val)
 
-        self.s.bind(('127.0.0.1', 6000))#(('192.168.0.100', 8088))#
+        self.s.bind((ip, port))
         self.s.listen(5)
 
         self.threads = {}
         self.address = {}
-        self.bufsize = 100*1024
+        self.bufsize = 500 * 1024
+        self.handler_timeout = 0.1
 
 
     # singleton
@@ -81,11 +115,45 @@ class SocketServer:
 
     # verify ip
     def verify_ip(self, ip):
-        if ip == '127.0.0.1':
-            return True
         return ip in [
-            key.device_ip for key in self.threads.keys()
+            key for key in self.threads.keys()
         ]
+
+
+    # refresh
+    def refresh_handler(self, t):
+        ''' handles data recieving
+        :a sub-thread of main
+        '''
+
+        while t.running:
+            try:
+                data = t.conn.recv(self.bufsize)
+            except WindowsError as win_err:
+                print(win_err)
+                break
+            except Exception as e:
+                print(e)
+                continue
+            #data = t.conn.recv(self.bufsize)
+
+            if not data:
+                break
+            elif len(data) > 1000:
+                try:
+                    img = Image.open(BytesIO(data))
+                    t.push_img(img)
+                    #print('Qsize: {}'.format(t.buffer.images.qsize()))
+                except Exception as e:
+                    print(e)
+                    continue
+            else:
+                try:
+                    temp, humid = map(int, data.decode().strip('\r\n').split())
+                    t.push_sensors(temp, humid)
+                except Exception as e:
+                    print(e)
+                    continue
 
 
     # handler
@@ -104,22 +172,16 @@ class SocketServer:
         print('Accepted socket from {}'.format(ip))
 
         t = self.threads[ip]
+        t.conn = conn
+        subt = threading.Thread(
+            target=self.refresh_handler,
+            args=(t,)
+        )
 
+        subt.setDaemon(True)
+        subt.start()
         while t.running:
-            try:
-                data = conn.recv(self.bufsize)
-            except Exception as e:
-                continue
-            #data = conn.recv(self.bufsize)
-
-            if not data:
-                break
-            elif len(data) > 1000:
-                img = Image.open(BytesIO(data))
-                t.push_img(img)
-                print('Qsize: {}'.format(t.buffer.images.qsize()))
-            else:
-                print('Recieved from {}: {}'.format(ip, data.decode()))
+            subt.join(timeout=self.handler_timeout)
 
         conn.close()
         print('Socket {} closed'.format(ip))
@@ -127,36 +189,41 @@ class SocketServer:
 
 
     # create new socket
-    def create_socket(self, id, ip):
+    def create_socket(self, dev_id, dev_ip):
         ''' a method that creates a new websocket '''
 
-        if ip in self.threads.keys():
-            self.close_socket(ip)
+        if dev_ip in self.threads.keys():
+            self.close_socket(dev_id)
 
         t = SocketThread(target=self.socket_handler)
-        self.threads[ip] = t
-        self.address[id] = ip
+        self.threads[dev_ip] = t
+        self.address[dev_id] = dev_ip
+        t.setDaemon(True)
 
         t.start()
+        print('Socket created for {}: {}'.format(dev_id, dev_ip))
         return 'OK'
 
 
     # close a socket
-    def close_socket(self, ip):
+    def close_socket(self, dev_id):
         ''' close a websocket '''
 
         try:
-            self.threads[ip].close()
+            ip = self.address[dev_id]
+            t = self.threads[ip]
+            t.close()
+            t.join()
             return 'OK'
         except KeyError:
             return None
 
 
 # interfaces
-def init_server():
+def init_server(ip, port):
     ''' initialize the server '''
 
-    return SocketServer.instance()
+    return SocketServer.instance(ip, port)
 
 
 def create_socket(device_id, device_ip):
@@ -180,7 +247,45 @@ def pop_img(device_id):
     ''' fetch a jpeg frame according to device_id '''
 
     t = get_thread(device_id)
-    if t is not None:
+    if t:
         return t.pop_img()
     else:
         return None
+
+
+def pop_sensors(device_id):
+    ''' fetch sensor data according to device_id '''
+
+    t = get_thread(device_id)
+    if t:
+        return t.pop_sensors()
+    else:
+        return None
+
+
+def send_command(device_id, cmd):
+    ''' send a command to device '''
+
+    t = get_thread(device_id)
+    if t and t.conn:
+        t.conn.send(cmd.to_bytes(
+            length=1,
+            byteorder='little',
+            signed=False
+        ))
+        return 'OK'
+    else:
+        return None
+
+
+def close_socket(device_id):
+    ''' close a websocket '''
+
+    return SocketServer.instance().close_socket(device_id)
+
+
+def socket_alive(device_id):
+    ''' check if a socket is alive for specific device id '''
+
+    t = get_thread(device_id)
+    return True if t else False
