@@ -10,19 +10,26 @@ volatile u32 jpeg_data_len = 0;
 volatile u8 jpeg_data_rdy = 0;
 
 u32* send_buf;
-u32 send_buf_idx = 0;
+u32 send_data_len = 0;
 
 u8 cam_on = 0;
 u8 dht_on = 0;
 u8 frame = 1;
 
-u16 ov_out_mode[5][2] = {
+u16 ov_out_mode[4][2] = {
 	0, 0,       //default
 	320,240,	//QVGA
 	640,480,	//VGA
 	800,600,	//SVGA
+};/*
 	1024,768,	//XGA
-};
+};*/
+
+
+void camera_mode_set(u8 idx)
+{
+	OV2640_OutSize_Set(ov_out_mode[idx][0], ov_out_mode[idx][1]);
+}
 
 
 void jpeg_data_process(void)
@@ -51,18 +58,36 @@ OS_STK CAM_TASK_STK[CAM_STK_SIZE];
 void camera_task(void *pdata)
 {
 	jpeg_buf = mymalloc(SRAMIN, jpeg_buf_size * 4);
-	send_buf = mymalloc(SRAMEX, jpeg_buf_size * 4 * SEND_NUM);
-	
-	if(jpeg_buf == 0x00 || send_buf == 0x00)
+	if(jpeg_buf == 0x00)
 	{
 		printf("Malloc Failed!\r\n");
-		while(1);
+		OS_CPU_SR cpu_sr;
+		OS_ENTER_CRITICAL();
+		u8 f = 1;
+		while(f) {};
+		OS_EXIT_CRITICAL();
 	}
+	
+#ifdef JPEG_BATCH
+	
+	send_buf = mymalloc(SRAMEX, jpeg_buf_size * 4 * SEND_NUM);
+	if(send_buf == 0x00)
+	{
+		printf("Malloc Failed!\r\n");
+		OS_CPU_SR cpu_sr;
+		OS_ENTER_CRITICAL();
+		u8 f = 1;
+		while(f) {};
+		OS_EXIT_CRITICAL();
+	}
+	
+#endif /* JPEG_BATCH */
+	
 	
 	OV2640_JPEG_Mode();
 	My_DCMI_Init();
 	DCMI_DMA_Init((u32)jpeg_buf, jpeg_buf_size, DMA_MemoryDataSize_Word, DMA_MemoryInc_Enable);
-	OV2640_OutSize_Set(1024, 768); //QVGA MODE_DECRYPT
+	OV2640_OutSize_Set(320, 240); //QVGA MODE_DECRYPT
 	
 	DCMI_Start();
 	
@@ -76,12 +101,11 @@ void camera_task(void *pdata)
 		if(cam_on && jpeg_data_rdy == 1)
 		{
 			//cam_on = 0;
-			//mymemcpy(send_buf + send_buf_idx, jpeg_buf, jpeg_data_len);
-			//printf("Camera Captured %d bytes\r\n", jpeg_data_len * 4);
 			u8* p = (u8*)jpeg_buf;
-			send_buf_idx += jpeg_data_len;
 			
 #ifdef JPEG_BATCH
+			
+			send_data_len += jpeg_data_len;
 			
 			static u8 send_buf_cnt = 0;
 			send_buf_cnt++;
@@ -96,15 +120,23 @@ void camera_task(void *pdata)
 			
 			p = (u8*)send_buf;
 			
+#else
+
+			send_data_len = jpeg_data_len;
+
 #endif /* JPEG_BATCH */
 			
-			int ret = write(sock, p, send_buf_idx * 4);
+			while(*p == 0)
+				p++;
+			
+			int ret = write(sock, p, send_data_len * 4);
 			if(ret <= 0)
 				printf("Socket Error: No data sent\r\n");
 			
-			send_buf_idx = 0;
+			send_data_len = 0;
 			jpeg_data_rdy = 2;
 		}
+		
 		tval = (u16)1000/frame;
 		delay_ms(tval);
 	}
@@ -122,8 +154,13 @@ void dht11_task(void *pdata)
 	u8 temperature = 0, humidity = 0;
 	dht_data_buf = mymalloc(SRAMIN, 16);
 	
+	u8 cnt = 0;
+	
 	while(1)
 	{
+		if(++cnt > 10)
+			dht_on = 1;
+		
 		if(dht_on == 1)
 		{
 			dht_on = 0;
@@ -165,35 +202,43 @@ void key_task(void *pdata)
 		{
 			case KEY0_PRES:
 			{
-				switch(++cam_on)
+				static u8 mode = 0;
+				cam_on = (++mode > 3) ? 0 : mode;
+				
+				switch(mode)
 				{
 					case 1:
 					{
 						printf("QVGA Mode\r\n");
+						camera_mode_set(1);
 						break;
 					}
 					case 2:
 					{
 						printf("VGA Mode\r\n");
+						camera_mode_set(2);
 						break;
 					}
 					case 3:
 					{
 						printf("SVGA Mode\r\n");
+						camera_mode_set(3);
 						break;
-					}
+					}/*
 					case 4:
 					{
 						printf("XGA Mode\r\n");
+						camera_mode_set(4);
 						break;
-					}
+					}*/
 					default:
 					{
 						printf("Camera off\r\n");
-						cam_on = 0;
+						mode = 0;
 						break;
 					}
 				}
+				break;
 			}
 			case KEY1_PRES:
 			{

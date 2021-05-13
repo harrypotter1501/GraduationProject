@@ -20,6 +20,7 @@ OS_EVENT* sem_resp;
 extern u8 cam_on;
 extern u8 dht_on;
 extern u8 frame;
+void camera_mode_set(u8 idx);
 
 #define RECV_TASK_PRIO 10
 #define RECV_STK_SIZE 128
@@ -33,16 +34,40 @@ void socket_recv_task(void *args)
 	while(1)
 	{
 		int ret = read(sock, NET_RX_BUF, RX_BUFSIZE);
-		if(ret > 0)
+		if(ret > 0 && ret < RX_BUFSIZE - 1)
 		{
-			printf("Socket Recieved %d bytes:\r\n%s\r\n", ret, NET_RX_BUF);
+			NET_RX_BUF[ret] = '\0';
+			if(strlen(NET_RX_BUF) > 5)
+			{
+				printf("Socket Recieved %d bytes:\r\n%s\r\n", ret, NET_RX_BUF);
+				sprintf(NET_RX_BUF, "");
+				continue;
+			}
+			else
+				printf("Command:\r\n0x%X\r\n", (u8)NET_RX_BUF[0]);
+			
 			u8 cmd = NET_RX_BUF[0];
+			sprintf(NET_RX_BUF, "");
+			
 			dht_on = cmd & 0x01;
+			if(dht_on)
+				printf("DHT: on\r\n");
+			
 			cam_on = (cmd & 0x02) >> 1;
 			if(cam_on)
-				cam_on = ((cmd & 0x0C) >> 2) + 1;
+			{
+				u8 mode = ((cmd & 0x0C) >> 2) + 1;
+				if(mode > 0 && mode < 4)
+				{
+					camera_mode_set(mode);
+					printf("CAM: on\r\nMODE: %d\r\n", mode);
+				}
+				else
+					printf("Invalid Command\r\n");
+			}
 			
 			u8 frame_n = (cmd & 0x30) >> 4;
+			printf("FRAME: %d\r\n\r\n", frame_n);
 			switch(frame_n)
 			{
 				case 0:
@@ -57,7 +82,7 @@ void socket_recv_task(void *args)
 				}
 				case 2:
 				{
-					frame = 6;
+					frame = 5;
 					break;
 				}
 				default:
@@ -67,47 +92,6 @@ void socket_recv_task(void *args)
 		delay_ms(1000);
 	}
 }
-
-
-////send task
-//extern u32* send_buf;
-//extern u32 send_buf_idx;
-//extern u8 jpeg_data_rdy;
-
-//extern char* dht_data_buf;
-//extern u8 dht_data_rdy;
-
-
-//#define SEND_TASK_PRIO 11
-//#define SEND_STK_SIZE 128
-//OS_STK SEND_TASK_STK[SEND_STK_SIZE];
-
-//void socket_send_task(void *args)
-//{
-//	LWIP_UNUSED_ARG(args);
-//	
-//	int ret;
-//	
-//	while(1)
-//	{
-////		if(jpeg_data_rdy == 3)
-////		{
-////			for(u8 i = 0; i < 100; i++)
-////				printf("%d ", send_buf[i]);
-////			//u8* p = (u8*)send_buf;
-////			ret = write(sock, send_buf, send_buf_idx * 4);
-////			printf("\r\n");
-////			if(ret <= 0)
-////				printf("Socket Error: No data sent\r\n");
-////			send_buf_idx = 0;
-////			jpeg_data_rdy = 2;
-////		}
-//		
-//		
-//		
-//		delay_ms(10);
-//	}
-//}
 
 
 //sockets
@@ -320,24 +304,24 @@ void app_main_task(void* args)
 						 "Host: http://%s:%d\r\n"
 						 "\r\n\r\n", DEVICE_ID, DEVICE_KEY, SERVER_IP, SERVER_PORT_TCP);
 	
-//	INT8U err;
-//	OSSemPend(sem_http_rdy, 0, &err);
-//	
-//	while(verify_device())
-//	{
-//		printf("Verify Device Failed! Retrying...\r\n");
-//		delay_ms(1000);
-//		break;
-//	}
-	delay_ms(3000);
+	INT8U err;
+	OSSemPend(sem_http_rdy, 0, &err);
+	
+	while(verify_device())
+	{
+		printf("Verify Device Failed! Retrying...\r\n");
+		delay_ms(1000);
+	}
+	//delay_ms(3000);
 	
 	socket_connect();
 	
-	while(1)
-	{
-		//do something
-		delay_ms(1000);
-	}
+//	while(1)
+//	{
+//		//do something
+//		delay_ms(1000);
+//	}
+	OSTaskSuspend(OS_PRIO_SELF);
 }
 
 
@@ -355,9 +339,9 @@ INT8U apps_init(void)
 	
 	res |= OSTaskCreate(socket_recv_task, (void*)0, (OS_STK*)&RECV_TASK_STK[RECV_STK_SIZE - 1], RECV_TASK_PRIO);
 	//res |= OSTaskCreate(socket_send_task, (void*)0, (OS_STK*)&SEND_TASK_STK[SEND_STK_SIZE - 1], SEND_TASK_PRIO);
-	//res |= OSTaskCreate(http_get_task, (void*)0,  (OS_STK*)&GET_TASK_STK[GET_STK_SIZE - 1], GET_TASK_PRIO);
+	res |= OSTaskCreate(http_get_task, (void*)0,  (OS_STK*)&GET_TASK_STK[GET_STK_SIZE - 1], GET_TASK_PRIO);
 	res |= OSTaskCreate(app_main_task, (void*)0, (OS_STK*)&MAIN_TASK_STK[MAIN_STK_SIZE - 1], MAIN_TASK_PRIO);
-
+	
 	OS_EXIT_CRITICAL();
 	return res;
 }

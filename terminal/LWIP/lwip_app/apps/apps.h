@@ -24,12 +24,12 @@ typedef struct http_get_resp
 } HTTPResp;
 
 
-#define DEVICE_ID "test"
-#define DEVICE_KEY "123456"
+#define DEVICE_ID "testsys"
+#define DEVICE_KEY "abcdef"
 
 #define SERVER_IP "192.168.0.103"
-#define SERVER_PORT_TCP 8088
-#define SERVER_PORT_SO 8088
+#define SERVER_PORT_TCP 8080
+#define SERVER_PORT_SO 8088//6000//
 
 #define RX_BUFSIZE 150
 #define TX_BUFSIZE 100

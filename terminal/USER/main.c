@@ -24,13 +24,17 @@ int main(void)
 	while(DHT11_Init())
 	{
 		printf("DHT11 Error, Retrying...\r\n");
-		delay_ms(500);
+		delay_ms(1000);
 	}
 	
 	FSMC_SRAM_Init();
-	mymem_init(SRAMIN);
-	mymem_init(SRAMEX);
-	mymem_init(SRAMCCM);
+	my_mem_init(SRAMIN);
+	my_mem_init(SRAMEX);
+	my_mem_init(SRAMCCM);
+	
+//	char *p = mymalloc(SRAMEX, 50);
+//	sprintf(p, "some string...");
+//	printf("SRAMEX:\r\n%s\r\n", p);
 	
 	while(OV2640_Init())
 	{
@@ -62,4 +66,3 @@ int main(void)
 	OSTaskCreate(start_task,(void*)0,(OS_STK*)&START_TASK_STK[START_STK_SIZE-1],START_TASK_PRIO);
 	OSStart();
 }
-
