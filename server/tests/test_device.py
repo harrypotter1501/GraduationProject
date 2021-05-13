@@ -31,6 +31,7 @@ def test_create_close_socket(client, dev):
     time.sleep(1)
 
     dev.logout()
+    time.sleep(1)
     assert close_socket('test') == 'OK'
     assert len(SocketServer.instance().threads) == 0
 
@@ -41,7 +42,7 @@ def test_reconnect(client, dev):
 
     # do sth
     time.sleep(1)
-    
+
     assert b'OK' in dev.login().data
     assert len(SocketServer.instance().threads) == 1
     # assert b'OK' in dev.login().data
@@ -52,5 +53,3 @@ def test_reconnect(client, dev):
     dev.logout()
     assert close_socket('test') == 'OK'
     assert len(SocketServer.instance().threads) == 0
-
-

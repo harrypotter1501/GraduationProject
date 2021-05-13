@@ -29,29 +29,33 @@ t = Thread(
 s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
 
-s.bind(('192.168.0.103', 8088))
+s.bind(('192.168.0.103', 6000))
 s.listen(2)
 print('Listening...')
 
 conn, addr = s.accept()
 print('Connected!')
-conn.send(b'Connected!')
+conn.send(b'Connected!\r\n')
 
-t.start()
+t.setDaemon(True)
+#t.start()
 
 while True:
-    try:
-        data = conn.recv(100*1024)
-    except:
-        stop = True
-        break
+    data = conn.recv(100*1024)
 
     frame += 1
     size += len(data)
+    print('len: {}'.format(len(data)))
+
+    try:
+        img = Image.open(BytesIO(data))
+    except Exception as e:
+        print(e)
+
     if not data:
         stop = True
         break
 
 conn.close()
-t.join()
+#t.join()
 print('Connection closed')

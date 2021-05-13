@@ -13,6 +13,7 @@ def create_app(test_config=None):
         DATABASE = os.path.join(app.instance_path, 'flaskr.sqlite'),
         SERVER_IP = '127.0.0.1',
         SOCKET_PORT = 6000,
+        BUFSIZE_K = 500,
     )
 
     if test_config is None:
@@ -45,6 +46,7 @@ def create_app(test_config=None):
     from .socket_server import init_server
     ip = app.config['SERVER_IP']
     port = app.config['SOCKET_PORT']
+    bufsize_k = app.config['BUFSIZE_K']
     init_server(ip, port)
     print(' * Socket Server Running on {}:{}'.format(ip, port))
 

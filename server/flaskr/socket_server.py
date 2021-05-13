@@ -62,7 +62,7 @@ class SocketThread(threading.Thread):
 
 
     def pop_img(self):
-        return self.buffer.images.get()
+        return self.buffer.images.get_nowait()
 
 
     def push_sensors(self, temp=0, humid=0):
@@ -83,24 +83,26 @@ class SocketServer:
     :singleton
     '''
 
-    def __init__(self, ip='127.0.0.1', port=6000):
+    def __init__(self, ip='127.0.0.1', port=6000, bufsize_k=500):
         ''' create a SocketServer instance
         :threads - a dict that stores all SocketThreads
         :DO NOT get new instance after initializiation
         '''
 
+        #socket.setdefaulttimeout(5)
+
         self.s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self.s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-        # val = struct.pack('Q', 1000)
-        # self.s.setsockopt(socket.SOL_SOCKET, socket.SO_RCVTIMEO, val)
 
         self.s.bind((ip, port))
         self.s.listen(5)
 
         self.threads = {}
         self.address = {}
-        self.bufsize = 500 * 1024
+        self.bufsize = bufsize_k * 1024
+
         self.handler_timeout = 0.1
+        self.connect_timeout = 5
 
 
     # singleton
@@ -133,19 +135,20 @@ class SocketServer:
                 print(win_err)
                 break
             except Exception as e:
-                print(e)
+                #print(e)
                 continue
             #data = t.conn.recv(self.bufsize)
 
             if not data:
                 break
-            elif len(data) > 1000:
+            elif len(data) > 10:
                 try:
                     img = Image.open(BytesIO(data))
                     t.push_img(img)
                     #print('Qsize: {}'.format(t.buffer.images.qsize()))
                 except Exception as e:
                     print(e)
+                    print(data[:10], '...')
                     continue
             else:
                 try:
@@ -160,7 +163,14 @@ class SocketServer:
     def socket_handler(self):
         ''' handler for socket thread '''
 
-        conn, addr = self.s.accept()
+        self.s.settimeout(5)
+        try:
+            conn, addr = self.s.accept()
+        except Exception as e:
+            print(e)
+            return
+
+        self.s.settimeout(None)
         ip = addr[0]
 
         if not self.verify_ip(ip):
@@ -173,6 +183,7 @@ class SocketServer:
 
         t = self.threads[ip]
         t.conn = conn
+
         subt = threading.Thread(
             target=self.refresh_handler,
             args=(t,)
@@ -198,7 +209,7 @@ class SocketServer:
         t = SocketThread(target=self.socket_handler)
         self.threads[dev_ip] = t
         self.address[dev_id] = dev_ip
-        t.setDaemon(True)
+        #t.setDaemon(True)
 
         t.start()
         print('Socket created for {}: {}'.format(dev_id, dev_ip))

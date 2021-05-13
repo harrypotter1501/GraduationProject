@@ -19,8 +19,6 @@ def app():
     app = create_app({
         'TESTING': True,
         'DATABASE': db_path,
-        'SERVER_IP': '127.0.0.1',
-        'SOCKET_PORT': 6000,
     })
 
     with app.app_context():
