@@ -11,6 +11,8 @@ Page({
     humid: 0,
     modeIdx: 0,
     frameIdx: 0,
+    lmt: 10,
+    cnt: 0,
 
     imgSrc: '../../images/temp/demo.jpg',
     imgInter: null,
@@ -18,11 +20,11 @@ Page({
     alive: false,
     imgBufSize: 5,
     imgBuf: null,
-    refreshPeriod: 500,
+    refreshPeriod: 100,
     button: 'Start',
 
-    modeArray: ['QVGA', 'VGA', 'SVGA', 'SGA'],
-    modeItems: ['QVGA', 'VGA', 'SVGA', 'SGA'],
+    modeArray: ['QVGA', 'VGA', 'SVGA'],//, 'XGA'],
+    modeItems: ['QVGA', 'VGA', 'SVGA'],//, 'XGA'],
     frameArray: ['Low', 'Medium', 'High'],
     frameItems: ['LOW', 'MEDIUM', 'HIGH'],
 
@@ -82,9 +84,26 @@ Page({
       },
       complete: (res) => {
         console.log(res)
-        app.globalData.requestCompleteCallback(res)
+        //app.globalData.requestCompleteCallback(res)
       }
     })
+    switch (this.data.frameIdx) {
+      case '0': {
+        this.data.lmt = 10
+        break
+      }
+      case '1': {
+        this.data.lmt = 3
+        break
+      }
+      case '2': {
+        this.data.lmt = 2
+        break
+      }
+      default: {
+        this.data.lmt = 10
+      }
+    }
   },
   imgDownload () {
     if (!this.data.imgBuf.isFull()) {
@@ -103,7 +122,7 @@ Page({
           console.error(res.errMsg)
         },
         complete: (res) => {
-          app.globalData.requestCompleteCallback(res)
+          //app.globalData.requestCompleteCallback(res)
         },
         timeout: page.data.refreshPeriod * page.data.imgBufSize
       })
@@ -117,12 +136,16 @@ Page({
       },
       success: (res) => {
         console.log(res)
+        this.setData({
+          temp: res.data.temperature,
+          humid: res.data.humidity,
+        })
       },
       fail: (res) => {
         console.error(res)
       },
       complete: (res) => {
-        app.globalData.requestCompleteCallback(res)
+        //app.globalData.requestCompleteCallback(res)
       }
     })
   },
@@ -164,7 +187,7 @@ Page({
         console.error(res)
       },
       complete: (res) => {
-        app.globalData.requestCompleteCallback(res)
+        //app.globalData.requestCompleteCallback(res)
       }
     })
   },
@@ -176,14 +199,17 @@ Page({
     }
     var page = this
     this.data.imgInter = setInterval( () => {
-      page.setData({
-        datetime: formatTime(new Date())
-      })
-      if (this.data.alive) {
-        page.imgDownload()
+      if (page.data.cnt++ >= page.data.lmt) {
+        page.data.cnt = 0
         page.setData({
-          imgSrc: page.data.imgBuf.pop()
+          datetime: formatTime(new Date())
         })
+        if (this.data.alive) {
+          page.imgDownload()
+          page.setData({
+            imgSrc: page.data.imgBuf.pop()
+          })
+        }
       }
     }, this.data.refreshPeriod)
   }

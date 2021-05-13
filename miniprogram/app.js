@@ -76,7 +76,7 @@ App({
     })
   },
   setCookie (res) {
-    if (res.cookies.length != 0) {
+    if (res.cookies && res.cookies.length != 0) {
       this.globalData.cookie = res.cookies[0]
     }
   },
@@ -85,8 +85,8 @@ App({
     login: false,
     register: false,
     cookie: null,
-    server: 'http://127.0.0.1:8080', //'http://119.29.13.194:8080',
-    //localServer: 'http://127.0.0.1:5000'
+    server: 'http://192.168.0.103:8080', //'http://127.0.0.1:8080', //'http://119.29.13.194:8080', //
+    //
     requestCompleteCallback: null,
   }
 })
