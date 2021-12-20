@@ -1,0 +1,30 @@
+<!--pages/test.wxml-->
+<view class="container">
+  <view class="user-motto">
+    <text class="user-motto">{{datetime}}\n</text>
+  </view>
+  <view class="user-motto">
+    <text class="user-motto">Temperature: {{temp}}</text>
+    <text class="user-motto">Humidity: {{humid}}%</text>
+  </view>
+  <view class="window">
+    <view class="box">
+      <image class="img" mode="center" src="{{imgSrc}}"></image>
+    </view>
+    <button class="button" bindtap="refresh">{{button}}</button>
+  </view>
+  <view class="options">
+    <view class="group">
+      <view class="label">Select Quality</view>
+      <picker class="label" mode="selector" bindchange="pickerModeChange" range="{{modeArray}}">
+        <view class="items">{{modeArray[modeIdx]}}</view>
+      </picker>
+    </view>
+    <view class="group">
+      <view class="label">Select Frame</view>
+      <picker class="label" mode="selector" bindchange="pickerFrameChange" range="{{frameArray}}">
+        <view class="items">{{frameArray[frameIdx]}}</view>
+      </picker>
+    </view>
+  </view>
+</view>

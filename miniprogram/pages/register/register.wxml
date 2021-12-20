@@ -1,0 +1,25 @@
+<!--pages/register.wxml-->
+
+<view class="container">
+  <view>
+    <text class="title">Register your device</text>
+  </view>
+  <view class="form">
+    <form bindsubmit="bindFormSubmit">
+      <input
+        class="input"
+        focus="true"
+        name="device_id"
+        placeholder="Device-ID"
+      />
+      <input
+        class="input"
+        focus="true"
+        name="device_key"
+        placeholder="Device-Key"
+        password="true"
+      />
+      <button class="button" form-type="submit">Submit</button>
+    </form>
+  </view>
+</view>

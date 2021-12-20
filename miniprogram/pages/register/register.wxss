@@ -1,0 +1,21 @@
+/* pages/register.wxss */
+
+.title {
+  font-size: large;
+  margin-bottom: 100px;
+}
+
+.form {
+  display: flex;
+  flex-direction: column;
+}
+
+.input {
+  height: 50px;
+  margin-top: 20px;
+  border: 1px solid grey;
+}
+
+.button {
+  margin-top: 50px;
+}
