@@ -10,6 +10,8 @@ This article firstly analyses the existing problems in present products, designs
 
 ## Description
 
+![System](documents/digrams.png)
+
 There are 3 subsystems in this project. 
 - Embedded device: STM32
 - Interactive application: WeChat Miniprogram

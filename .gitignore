@@ -1,0 +1,8 @@
+# docs
+*.doc
+*.docx
+*.drawio
+
+# others
+*.sketch
+.DS_Store
