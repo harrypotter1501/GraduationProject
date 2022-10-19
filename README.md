@@ -17,6 +17,10 @@ There are 3 subsystems in this project.
 - Interactive application: WeChat Miniprogram
 - Server: Flask with WebSocket
 
+## Results
+
+
+
 ## References
 
 [1] Lu li,Changkun wang,Fuqiang zhao. A Smart Home Control System Integrated the Improved Streaming Media Technology and Raspberry Pi[C]//Proceedings of 2015 Ssr International Conference on Social Sciences and Information(ssr-ssi 2015 V11),  Singapore Management and Sports Science Institute, 2015: 656-659.
