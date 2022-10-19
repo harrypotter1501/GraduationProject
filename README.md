@@ -17,9 +17,7 @@ There are 3 subsystems in this project.
 - Interactive application: WeChat Miniprogram
 - Server: Flask with WebSocket
 
-## Results
-
-
+## [Results](https://drive.google.com/file/d/1sr8nEh7t7puYoyusxvfvxuC1HFcimC-n/view?usp=sharing)
 
 ## References
 
