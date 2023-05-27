@@ -1,4 +1,4 @@
-# STM32-Based Smart Domestic Terminal System
+# STM32-Based Domestic Terminal System
 
 ## Graduation Project
 
